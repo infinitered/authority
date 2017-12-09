@@ -13,9 +13,12 @@
 # Ignore Elixir LS
 /.elixir_ls
 
+<<<<<<< HEAD
 # Ignore Mac OSX files
 /.DS_Store
 
+=======
+>>>>>>> Initial commit
 # Ignore .fetch files in case you like to edit your project deps locally.
 /.fetch
 
