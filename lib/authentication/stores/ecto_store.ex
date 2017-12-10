@@ -1,9 +1,9 @@
 if Code.ensure_loaded?(Ecto) do
   defmodule Authority.Authentication.EctoStore do
-    defmacro __using__(opts) do
+    defmacro __using__(config) do
       quote do
         @opts unquote(opts)
-        @otp_app @opts[:otp_app]
+        @config Enum.into(unquote(config), %{})
 
         @store Authority.Authentication.EctoStore
         @behaviour Authority.Authentication.Store
@@ -17,7 +17,7 @@ if Code.ensure_loaded?(Ecto) do
         end
 
         def config do
-          Application.get_env(@otp_app, __MODULE__)
+          @config
         end
 
         defoverridable Authority.Authentication.Store

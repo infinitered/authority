@@ -50,7 +50,7 @@ defmodule Authority.AuthenticationTest do
     def validate(%Key{key: "expired"}, _user), do: {:error, :key_expired}
   end
 
-  @config %{config: %{store: TestStore}}
+  @config %{store: TestStore}
 
   describe ".authenticate/2" do
     test "returns error if credential does not exist" do

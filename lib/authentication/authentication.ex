@@ -1,40 +1,33 @@
 defmodule Authority.Authentication do
   @callback authenticate(any, any) :: {:ok, any} | {:error, :term}
 
-  def authenticate(module, credential) do
-    %{store: store} = module.config()
-
+  @doc false
+  def authenticate(%{store: store}, credential) do
     with {:ok, identity} <- store.identify(credential),
          :ok <- store.validate(credential, identity) do
       {:ok, identity}
     end
   end
 
-  def authenticate(module, identifier, credential) do
-    %{store: store} = module.config()
-
+  @doc false
+  def authenticate(%{store: store}, identifier, credential) do
     with {:ok, identity} <- store.identify(identifier),
          :ok <- store.validate(credential, identity) do
       {:ok, identity}
     end
   end
 
-  defmacro __using__(opts) do
+  defmacro __using__(config) do
     quote do
       @behaviour Authority.Authentication
-      @opts unquote(opts)
-      @otp_app @opts[:otp_app]
+      @config Enum.into(unquote(config), %{})
 
       def authenticate(credential) do
-        Authority.Authentication.authenticate(__MODULE__, credential)
+        Authority.Authentication.authenticate(@config, credential)
       end
 
       def authenticate(identifier, credential) do
-        Authority.Authentication.authenticate(__MODULE__, identifier, credential)
-      end
-
-      def config do
-        Application.get_env(@otp_app, __MODULE__)
+        Authority.Authentication.authenticate(@config, identifier, credential)
       end
 
       defoverridable Authority.Authentication
