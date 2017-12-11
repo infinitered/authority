@@ -9,11 +9,11 @@ if Code.ensure_loaded?(Ecto) do
         @behaviour Authority.Authentication.Store
 
         def identify(identifier) do
-          @store.identify(__MODULE__, identifier)
+          @store.identify(@config, identifier)
         end
 
         def validate(credential, identity) do
-          @store.validate(__MODULE__, credential, identity)
+          @store.validate(@config, credential, identity)
         end
 
         def config do
@@ -24,14 +24,14 @@ if Code.ensure_loaded?(Ecto) do
       end
     end
 
-    def identify(module, identifier) do
-      %{
-        repo: repo,
-        schema: schema,
-        identity_field: field
-      } = module.config()
-
-      identity = repo.get_by(schema, [{field, identifier}])
+    def identify(config, identifier) do
+      identity =
+        do_identify(
+          config[:repo],
+          config[:schema],
+          config[:identity_fields] || config[:identity_field],
+          identifier
+        )
 
       if identity do
         {:ok, identity}
@@ -40,13 +40,27 @@ if Code.ensure_loaded?(Ecto) do
       end
     end
 
-    def validate(module, credential, identity) do
-      %{
-        credential_field: field,
-        credential_type: type,
-        hash_algorithm: algorithm
-      } = module.config()
+    defp do_identify(repo, schema, field, identifier) when is_atom(field) do
+      repo.get_by(schema, [{field, identifier}])
+    end
 
+    def do_identify(repo, schema, [field | _] = fields, identifier)
+        when is_atom(field) do
+      import Ecto.Query
+
+      query =
+        Enum.reduce(fields, schema, fn field, query ->
+          or_where(schema, [{^field, ^identifier}])
+        end)
+
+      repo.one(query)
+    end
+
+    def validate(
+          %{credential_field: field, credential_type: type, hash_algorithm: algorithm},
+          credential,
+          identity
+        ) do
       expected = identity[field]
 
       if equal?(credential, expected, type, algorithm) do

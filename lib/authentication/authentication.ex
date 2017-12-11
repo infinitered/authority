@@ -1,5 +1,9 @@
 defmodule Authority.Authentication do
-  @callback authenticate(any, any) :: {:ok, any} | {:error, :term}
+  @type id :: any
+  @type credential :: any
+
+  @callback authenticate(credential) :: {:ok, any} | {:error, term}
+  @callback authenticate(id, credential) :: {:ok, any} | {:error, term}
 
   @doc false
   def authenticate(%{store: store}, credential) do
