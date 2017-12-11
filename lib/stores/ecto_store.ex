@@ -37,35 +37,38 @@ if Code.ensure_loaded?(Ecto) do
       opts = default_opts(compile_config)
 
       quote do
-        @config Enum.into(unquote(config), %{})
+        @__ecto_store__ Enum.into(unquote(config), %{})
         @store Authority.EctoStore
 
-        if @config[:authentication] do
+        if @__ecto_store__[:authentication] do
           @behaviour Authority.Authentication.Store
 
+          @impl true
           def identify(identifier, opts \\ unquote(opts)) do
-            @store.identify(@config, identifier, Enum.into(opts, %{}))
+            @store.identify(@__ecto_store__, identifier, Enum.into(opts, %{}))
           end
 
+          @impl true
           def validate(credential, identity, opts \\ unquote(opts)) do
-            @store.validate(@config, credential, identity, Enum.into(opts, %{}))
+            @store.validate(@__ecto_store__, credential, identity, Enum.into(opts, %{}))
           end
 
           defoverridable Authority.Authentication.Store
         end
 
-        if @config[:exchange] do
+        if @__ecto_store__[:exchange] do
           @behaviour Authority.Exchange.Store
 
+          @impl true
           def exchange(identity, opts \\ []) do
-            @store.exchange(@config, identity, Enum.into(opts, %{}))
+            @store.exchange(@__ecto_store__, identity, Enum.into(opts, %{}))
           end
 
           defoverridable Authority.Exchange.Store
         end
 
-        def config do
-          @config
+        def __ecto_store__ do
+          @__ecto_store__
         end
       end
     end
