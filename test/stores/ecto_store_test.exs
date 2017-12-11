@@ -101,7 +101,8 @@ defmodule Authority.EctoStoreTest do
             expires_in_seconds: 60
           },
           recovery: %{
-            expires_in_seconds: 60
+            expires_in_seconds: 60,
+            skip_validation: [~r/@/]
           }
         }
       }
@@ -144,6 +145,12 @@ defmodule Authority.EctoStoreTest do
                  %User{},
                  context: :recovery
                )
+    end
+
+    # This allows us to exchange email addresses for recovery tokens
+    test "returns ok if email is valid and context is recovery" do
+      assert :ok == Store.validate("existing@email.com", %User{}, context: :recovery)
+      assert {:error, _} = Store.validate("existing@email.com", %User{})
     end
 
     test "returns ok if password is valid" do

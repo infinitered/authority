@@ -21,7 +21,8 @@ if Code.ensure_loaded?(Ecto) do
   #         expires_in_seconds: 60,
   #       },
   #       recovery: %{
-  #         expires_in_seconds: 60
+  #         expires_in_seconds: 60,
+  #         skip_validation: [~r/@/] # allow bare email addresses to be exchanged for tokens
   #       }
   #     }
   #   }
@@ -191,12 +192,36 @@ if Code.ensure_loaded?(Ecto) do
       end
     end
 
-    def validate(
-          %{authentication: %{credential_field: field, credential_type: type} = auth},
-          credential,
-          identity,
-          _opts
-        ) do
+    def validate(%{exchange: %{contexts: contexts}} = config, credential, identity, %{
+          context: context
+        }) do
+      settings = contexts[context]
+      skip_patterns = settings[:skip_validation]
+
+      if is_list(skip_patterns) && Enum.any?(skip_patterns, &pattern_match?(&1, credential)) do
+        :ok
+      else
+        do_validate(config, credential, identity)
+      end
+    end
+
+    def validate(config, credential, identity, _opts) do
+      do_validate(config, credential, identity)
+    end
+
+    defp pattern_match?(%Regex{} = pattern, target) when is_binary(target) do
+      Regex.match?(pattern, target)
+    end
+
+    defp pattern_match?(pattern, target) do
+      Kernel.match?(^pattern, target)
+    end
+
+    defp do_validate(
+           %{authentication: %{credential_field: field, credential_type: type} = auth},
+           credential,
+           identity
+         ) do
       expected = Map.get(identity, field)
 
       if equal?(credential, expected, type, auth[:hash_algorithm]) do
@@ -211,10 +236,13 @@ if Code.ensure_loaded?(Ecto) do
     end
 
     if Code.ensure_loaded?(Comeonin.Bcrypt) do
-      defp equal?(credential, expected, :hash, :bcrypt) do
+      defp equal?(credential, expected, :hash, :bcrypt)
+           when is_binary(credential) and is_binary(expected) do
         Comeonin.Bcrypt.checkpw(credential, expected)
       end
     end
+
+    defp equal?(_credential, _expected, _, _), do: false
 
     defp validate_config!(config) do
       unless config[:repo], do: raise(ConfigError, ":repo module not set")
