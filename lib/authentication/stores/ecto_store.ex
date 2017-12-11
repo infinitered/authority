@@ -24,7 +24,7 @@ if Code.ensure_loaded?(Ecto) do
       end
     end
 
-    def identify(config, identifier) do
+    def identify(config, identifier, _opts) do
       identity =
         do_identify(
           config[:repo],
@@ -59,7 +59,8 @@ if Code.ensure_loaded?(Ecto) do
     def validate(
           %{credential_field: field, credential_type: type, hash_algorithm: algorithm},
           credential,
-          identity
+          identity,
+          _opts
         ) do
       expected = identity[field]
 
