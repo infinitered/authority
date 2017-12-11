@@ -1,8 +1,6 @@
 defmodule Authority.AuthenticationTest do
   use ExUnit.Case
 
-  import Authority.Authentication
-
   defmodule Email do
     defstruct [:email]
   end
@@ -22,23 +20,23 @@ defmodule Authority.AuthenticationTest do
   defmodule TestStore do
     @behaviour Authority.Authentication.Store
 
-    def identify(%Email{email: "existing@user.com"}) do
+    def identify(%Email{email: "existing@user.com"}, _opts) do
       {:ok, %User{password: "password"}}
     end
 
-    def identify(%Email{}) do
+    def identify(%Email{}, _opts) do
       {:error, :invalid_email}
     end
 
-    def identify(%Key{key: key}) when key in ["valid", "expired"] do
+    def identify(%Key{key: key}, _opts) when key in ["valid", "expired"] do
       {:ok, %User{}}
     end
 
-    def identify(%Key{}) do
+    def identify(%Key{}, _opts) do
       {:error, :invalid_key}
     end
 
-    def validate(%Password{password: password}, user) do
+    def validate(%Password{password: password}, user, _opts) do
       if password == user.password do
         :ok
       else
@@ -46,38 +44,54 @@ defmodule Authority.AuthenticationTest do
       end
     end
 
-    def validate(%Key{key: "valid"}, _user), do: :ok
-    def validate(%Key{key: "expired"}, _user), do: {:error, :key_expired}
+    def validate(%Key{key: "valid"}, _user, _opts), do: :ok
+    def validate(%Key{key: "expired"}, _user, _opts), do: {:error, :key_expired}
+
+    # Validate email, but only for the recovery context
+    def validate(%Email{email: "existing@user.com"}, _user, opts) do
+      if opts[:context] == :recovery do
+        :ok
+      else
+        {:error, :credential_required}
+      end
+    end
   end
 
-  @config %{store: TestStore}
+  defmodule TestAuth do
+    use Authority.Authentication, store: TestStore
+  end
 
   describe ".authenticate/2" do
     test "returns error if credential does not exist" do
-      assert {:error, :invalid_key} = authenticate(@config, ~K[nonexistent])
+      assert {:error, :invalid_key} = TestAuth.authenticate(~K[nonexistent])
     end
 
     test "returns error if credential exists, but is invalid" do
-      assert {:error, :key_expired} = authenticate(@config, ~K[expired])
+      assert {:error, :key_expired} = TestAuth.authenticate(~K[expired])
     end
 
     test "returns identity if credential is valid" do
-      assert {:ok, %User{}} = authenticate(@config, ~K[valid])
+      assert {:ok, %User{}} = TestAuth.authenticate(~K[valid])
+    end
+
+    test "returns identity for email if context is :recovery" do
+      assert {:ok, %User{}} = TestAuth.authenticate(~E[existing@user.com], context: :recovery)
+      assert {:error, :credential_required} = TestAuth.authenticate(~E[existing@user.com])
     end
   end
 
   describe ".authenticate/3" do
     test "returns error if identifier is invalid" do
       assert {:error, :invalid_email} =
-               authenticate(@config, ~E[nonexistent@user.com], ~P[password])
+               TestAuth.authenticate({~E[nonexistent@user.com], ~P[password]})
     end
 
     test "returns error if identifier is valid but credential is invalid" do
-      assert {:error, _} = authenticate(@config, ~E[existing@user.com], ~P[invalid])
+      assert {:error, _} = TestAuth.authenticate({~E[existing@user.com], ~P[invalid]})
     end
 
     test "returns identity if identifier and credential are valid" do
-      assert {:ok, %User{}} = authenticate(@config, ~E[existing@user.com], ~P[password])
+      assert {:ok, %User{}} = TestAuth.authenticate({~E[existing@user.com], ~P[password]})
     end
   end
 

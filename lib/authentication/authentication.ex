@@ -1,22 +1,22 @@
 defmodule Authority.Authentication do
   @type id :: any
-  @type credential :: any
+  @type credential :: {id, any} | any
+  @type opts :: Keyword.t()
 
-  @callback authenticate(credential) :: {:ok, any} | {:error, term}
-  @callback authenticate(id, credential) :: {:ok, any} | {:error, term}
+  @callback authenticate(credential, opts) :: {:ok, any} | {:error, term}
 
   @doc false
-  def authenticate(%{store: store}, credential) do
-    with {:ok, identity} <- store.identify(credential),
-         :ok <- store.validate(credential, identity) do
+  def authenticate(%{store: store}, {identifier, credential}, opts) do
+    with {:ok, identity} <- store.identify(identifier, opts),
+         :ok <- store.validate(credential, identity, opts) do
       {:ok, identity}
     end
   end
 
   @doc false
-  def authenticate(%{store: store}, identifier, credential) do
-    with {:ok, identity} <- store.identify(identifier),
-         :ok <- store.validate(credential, identity) do
+  def authenticate(%{store: store}, credential, opts) do
+    with {:ok, identity} <- store.identify(credential, opts),
+         :ok <- store.validate(credential, identity, opts) do
       {:ok, identity}
     end
   end
@@ -24,14 +24,14 @@ defmodule Authority.Authentication do
   defmacro __using__(config) do
     quote do
       @behaviour Authority.Authentication
-      @config Enum.into(unquote(config), %{})
+      @__authentication__ Enum.into(unquote(config), %{})
 
-      def authenticate(credential) do
-        Authority.Authentication.authenticate(@config, credential)
+      def authenticate(credential, opts \\ []) do
+        Authority.Authentication.authenticate(@__authentication__, credential, opts)
       end
 
-      def authenticate(identifier, credential) do
-        Authority.Authentication.authenticate(@config, identifier, credential)
+      def __authentication__ do
+        @__authentication__
       end
 
       defoverridable Authority.Authentication
