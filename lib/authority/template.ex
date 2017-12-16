@@ -14,11 +14,11 @@ defmodule Authority.Template do
   With this information, it will automatically implement the behaviours for
   you.
 
-    defmodule MyApp.Accounts do
-      use Authority.Template,
-        behaviours: [...],
-        config: [...]
-    end
+      defmodule MyApp.Accounts do
+        use Authority.Template,
+          behaviours: [...],
+          config: [...]
+      end
     
   Each behaviour requires configuration settings.
 
@@ -29,11 +29,11 @@ defmodule Authority.Template do
 
   Example:
 
-    defmodule MyApp.Accounts do
-      use Authority.Template,
-        behaviours: [...],
-        config: [repo: MyApp.Repo]
-    end
+      defmodule MyApp.Accounts do
+        use Authority.Template,
+          behaviours: [...],
+          config: [repo: MyApp.Repo]
+      end
 
   #### `Authority.Authentication`
   _Provides basic email/password (or username/password) authentication._
@@ -47,19 +47,19 @@ defmodule Authority.Template do
   - `:user_password_field`: (optional) the password field `:user_schema`'s
   schema (Default: `:encrypted_password`)
 
-  - `:user_password_algorithm`: (option) the password hashing algorithm
+  - `:user_password_algorithm`: (optional) the password hashing algorithm
   (Default: `:bcrypt`)
 
   Example:
 
-    defmodule MyApp.Accounts do
-      use Authority.Template,
-        behaviours: [Authority.Authentication],
-        config: [
-          repo: MyApp.Repo,
-          user_schema: MyApp.Accounts.Schema
-        ]
-    end
+      defmodule MyApp.Accounts do
+        use Authority.Template,
+          behaviours: [Authority.Authentication],
+          config: [
+            repo: MyApp.Repo,
+            user_schema: MyApp.Accounts.Schema
+          ]
+      end
 
   #### `Authority.Locking`
   _Provides automatic account locking after a configurable number of
@@ -91,20 +91,19 @@ defmodule Authority.Template do
 
   Example:
 
-    defmodule MyApp.Accounts do
-      use Authority.Template,
-        behaviours: [
-          Authority.Authentication,
-          Authority.Locking
-        ],
-        config: [
-          repo: MyApp.Repo,
-          user_schema: MyApp.Accounts.User,
-          lock_schema: MyApp.Accounts.Lock,
-          lock_attempt_schema: MyApp.Accounts.LoginAttempt
-        ]
-    end
-
+      defmodule MyApp.Accounts do
+        use Authority.Template,
+          behaviours: [
+            Authority.Authentication,
+            Authority.Locking
+          ],
+          config: [
+            repo: MyApp.Repo,
+            user_schema: MyApp.Accounts.User,
+            lock_schema: MyApp.Accounts.Lock,
+            lock_attempt_schema: MyApp.Accounts.LoginAttempt
+          ]
+      end
 
   #### `Authority.Tokenization`
   _Provides tokenization for credentials. Must be used with
@@ -126,41 +125,41 @@ defmodule Authority.Template do
 
   Example:
 
-    defmodule MyApp.Accounts do
-      use Authority.Template,
-        behaviours: [
-          Authority.Authentication,
-          Authority.Tokenization
-        ],
-        config: [
-          repo: MyApp.Repo,
-          user_schema: MyApp.Accounts.User,
-          token_schema: MyApp.Accounts.Token
-        ]
-    end
+      defmodule MyApp.Accounts do
+        use Authority.Template,
+          behaviours: [
+            Authority.Authentication,
+            Authority.Tokenization
+          ],
+          config: [
+            repo: MyApp.Repo,
+            user_schema: MyApp.Accounts.User,
+            token_schema: MyApp.Accounts.Token
+          ]
+      end
 
   ## Usage
 
   Once you've configured your module, you can call `Authority` behaviour
   functions, depending on the behaviours your chose.
 
-    alias MyApp.Accounts
-    
-    Accounts.authenticate({email, password})
-    # => {:ok, %MyApp.Accounts.User{}}
-    
-    Accounts.authenticate(%MyApp.Accounts.Token{token: "valid"})
-    # => {:ok, %MyApp.Accounts.User{}}
-    
-    Accounts.tokenize({email, password})
-    # => {:ok, %MyApp.Accounts.Token{}}
-    
-    # After too many failed attempts to log in:
-    Accounts.authenticate({email, password})
-    # => {:error, %MyApp.Accounts.Lock{reason: :too_many_attempts}}
-    
-    Accounts.tokenize({email, password})
-    # => {:error, %MyApp.Accounts.Lock{reason: :too_many_attempts}}
+      alias MyApp.Accounts
+      
+      Accounts.authenticate({email, password})
+      # => {:ok, %MyApp.Accounts.User{}}
+      
+      Accounts.authenticate(%MyApp.Accounts.Token{token: "valid"})
+      # => {:ok, %MyApp.Accounts.User{}}
+      
+      Accounts.tokenize({email, password})
+      # => {:ok, %MyApp.Accounts.Token{}}
+      
+      # After too many failed attempts to log in:
+      Accounts.authenticate({email, password})
+      # => {:error, %MyApp.Accounts.Lock{reason: :too_many_attempts}}
+      
+      Accounts.tokenize({email, password})
+      # => {:error, %MyApp.Accounts.Lock{reason: :too_many_attempts}}
     
   ## Overriding
 
@@ -168,17 +167,17 @@ defmodule Authority.Template do
   For example, you can override `identify` to provide support for custom
   types.
 
-    defmodule MyApp.Accounts do
-      use Authority.Template,
-        behaviours: [Authority.Authentication],
-        config: [repo: MyApp.Repo, user_schema: MyApp.Accounts.User]
+      defmodule MyApp.Accounts do
+        use Authority.Template,
+          behaviours: [Authority.Authentication],
+          config: [repo: MyApp.Repo, user_schema: MyApp.Accounts.User]
+          
+        def identify(%MyApp.CustomStruct{} = struct) do
+          # find user
+        end
         
-      def identify(%MyApp.CustomStruct{} = struct) do
-        # find user
+        def identify(other), do: super(other)
       end
-      
-      def identify(other), do: super(other)
-    end
     
   ## Without Ecto
 
@@ -189,15 +188,15 @@ defmodule Authority.Template do
 
   alias Authority.{
     Authentication,
+    Locking,
     Tokenization,
     Template
   }
 
   @templates %{
-    [Authentication] => Template.Authenticate,
-    [Authentication, Locking] => Template.AuthenticateLock,
-    [Authentication, Tokenization] => Template.AuthenticateTokenize,
-    [Authentication, Locking, Tokenization] => Template.AuthenticateLockTokenize
+    Authentication => Template.Authentication,
+    Locking => Template.Locking,
+    Tokenization => Template.Tokenization
   }
 
   defmodule Error do
@@ -215,14 +214,14 @@ defmodule Authority.Template do
       raise Error, "You must specify :config"
     end
 
-    template = @templates[Enum.sort(config[:behaviours])]
+    for behaviour <- config[:behaviours] do
+      unless @templates[behaviour] do
+        raise Error, "No template found for behaviour #{inspect(behaviour)}"
+      end
 
-    unless template do
-      raise Error, "No template found for behaviours #{inspect(config[:behaviours])}"
-    end
-
-    quote do
-      use unquote(template), unquote(config[:config])
+      quote do
+        use unquote(@templates[behaviour]), unquote(config[:config])
+      end
     end
   end
 end

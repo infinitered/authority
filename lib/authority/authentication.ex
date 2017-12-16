@@ -184,6 +184,8 @@ defmodule Authority.Authentication do
   defp do_authenticate(module, identifier, credential, purpose) do
     with {:ok, identifier} <- module.before_identify(identifier),
          {:ok, user} <- module.identify(identifier) do
+      credential = combine_credential(identifier, credential)
+
       with :ok <- module.before_validate(user, purpose),
            :ok <- module.validate(credential, user, purpose),
            :ok <- module.after_validate(user, purpose) do
@@ -194,5 +196,18 @@ defmodule Authority.Authentication do
           error
       end
     end
+  end
+
+  # When credential and identifier are the same type, consider
+  # the identifier to be the credential
+  defp combine_credential(
+         %{__struct__: _struct} = identifier,
+         %{__struct__: _struct} = _credential
+       ) do
+    identifier
+  end
+
+  defp combine_credential(_identifier, credential) do
+    credential
   end
 end

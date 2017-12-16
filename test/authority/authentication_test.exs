@@ -1,102 +1,65 @@
 defmodule Authority.AuthenticationTest do
-  use ExUnit.Case
-
   defmodule Auth do
     use Authority.Authentication
+    alias Authority.Test.User
 
-    alias Authority.Test.{
-      Email,
-      User,
-      OAuthCode,
-      Password,
-      Token
-    }
-
-    def identify(%Email{email: "existing@user.com"}) do
-      {:ok, %User{password: "password"}}
+    def before_identify(identifier) do
+      send(self(), {:before_identify, [identifier]})
+      {:ok, identifier}
     end
 
-    def identify(%Email{}) do
-      {:error, :invalid_email}
-    end
-
-    def identify(%Token{token: token}) when token in ~w[valid expired] do
+    def identify(identifier) do
+      send(self(), {:identify, [identifier]})
       {:ok, %User{}}
     end
 
-    def identify(%Token{}) do
-      {:error, :invalid_token}
+    def before_validate(user, purpose) do
+      send(self(), {:before_validate, [user, purpose]})
+      :ok
     end
 
-    def identify(%OAuthCode{provider: :facebook, code: "valid"}) do
-      {:ok, %User{}}
+    def validate("invalid", _user, _purpose) do
+      {:error, :invalid_password}
     end
 
-    def identify(%OAuthCode{provider: :facebook, code: "invalid"}) do
-      {:error, :invalid_oauth_code}
+    def validate(credential, user, purpose) do
+      send(self(), {:validate, [credential, user, purpose]})
+      :ok
     end
 
-    def identify(%OAuthCode{}) do
-      {:error, :invalid_oauth_provider}
+    def after_validate(user, purpose) do
+      send(self(), {:after_validate, [user, purpose]})
+      :ok
     end
 
-    def validate(%Password{password: password}, user, _purpose) do
-      if password == user.password do
-        :ok
-      else
-        {:error, :invalid_password}
-      end
+    def failed(user, error) do
+      send(self(), {:failed, [user, error]})
     end
-
-    def validate(%Token{token: "valid"}, _user, _purpose), do: :ok
-
-    def validate(%Token{token: "expired"}, _user, _purpose), do: {:error, :expired_token}
-
-    def validate(%OAuthCode{}, _user, _purpose), do: :ok
   end
 
-  import Authority.Test.{
-    Email,
-    Password,
-    Token
-  }
+  use ExUnit.Case
 
-  alias Authority.Test.{
-    OAuthCode,
-    User
-  }
+  alias Authority.Test.User
 
   describe ".authenticate/2" do
-    test "returns error if credential does not exist" do
-      assert {:error, :invalid_token} = Auth.authenticate(~K[nonexistent])
+    test "executes all of the behaviour callbacks" do
+      Auth.authenticate({"username", "password"})
+      assert_received {:before_identify, ["username"]}
+      assert_received {:identify, ["username"]}
+      assert_received {:before_validate, [%User{}, :any]}
+      assert_received {:validate, ["password", %User{}, :any]}
+      assert_received {:after_validate, [%User{}, :any]}
+      refute_received {:failed, _args}
 
-      assert {:error, :invalid_oauth_provider} =
-               Auth.authenticate(%OAuthCode{provider: :github, code: "valid"})
-    end
+      # Calls the failed callback when a step fails
+      Auth.authenticate({"username", "invalid"})
+      assert_received({:failed, [%User{}, {:error, :invalid_password}]})
 
-    test "returns error if credential exists, but is invalid" do
-      assert {:error, :expired_token} = Auth.authenticate(~K[expired])
-
-      assert {:error, :invalid_oauth_code} =
-               Auth.authenticate(%OAuthCode{provider: :facebook, code: "invalid"})
-    end
-
-    test "returns error if identifier is invalid" do
-      assert {:error, :invalid_email} =
-               Auth.authenticate({~E[nonexistent@user.com], ~P[password]})
-    end
-
-    test "returns error if identifier is valid but credential is invalid" do
-      assert {:error, _} = Auth.authenticate({~E[existing@user.com], ~P[invalid]})
-    end
-
-    test "returns identity if credential is valid" do
-      assert {:ok, %User{}} = Auth.authenticate(~K[valid])
-      assert {:ok, %User{}} = Auth.authenticate(%OAuthCode{provider: :facebook, code: "valid"})
-    end
-
-    test "returns identity if identifier and credential are valid" do
-      assert {:ok, %User{}} = Auth.authenticate({~E[existing@user.com], ~P[password]})
+      # Passes custom purpose down
+      Auth.authenticate({"username", "password"}, :recovery)
+      assert_received {:before_validate, [%User{}, :recovery]}
+      assert_received {:validate, ["password", %User{}, :recovery]}
+      assert_received {:after_validate, [%User{}, :recovery]}
     end
   end
 end
