@@ -5,10 +5,11 @@ defmodule Authority.MixProject do
     [
       app: :authority,
       version: "0.1.0",
-      elixir: "~> 1.6-dev",
+      elixir: "~> 1.5",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      docs: docs()
     ]
   end
 
@@ -22,11 +23,26 @@ defmodule Authority.MixProject do
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_env), do: ["lib"]
 
+  defp docs do
+    [
+      main: Authority,
+      groups_for_modules: [
+        "Common Usage": [
+          Authority.Template
+        ],
+        Behaviours: [
+          Authority.Authentication,
+          Authority.Locking,
+          Authority.Tokenization
+        ]
+      ]
+    ]
+  end
+
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      # {:dep_from_hexpm, "~> 0.3.0"},
-      # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
+      {:ex_doc, ">= 0.0.0", only: [:dev, :test]}
     ]
   end
 end
