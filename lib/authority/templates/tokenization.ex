@@ -1,17 +1,12 @@
-defmodule Authority.Template.AuthenticateTokenize do
+defmodule Authority.Template.Tokenization do
   @moduledoc false
 
   defmacro __using__(config) do
-    quote do
+    quote location: :keep do
       @config unquote(config)
       @repo @config[:repo]
 
-      @user_schema @config[:user_schema]
-      @user_identity_field @config[:user_identity_field] || :email
-      @user_password_field @config[:user_password_field] || :encrypted_password
-      @user_password_algorithm @config[:user_password_algorithm] || :bcrypt
-
-      @token_schema @config[:token_schema]
+      @token_schema @config[:token_schema] || raise(":token_schema is required")
       @token_field @config[:token_field] || :token
       @token_user_assoc @config[:token_user_assoc] || :user
       @token_expiration_field @config[:token_expiration_field] || :expires_at
@@ -19,8 +14,6 @@ defmodule Authority.Template.AuthenticateTokenize do
 
       # AUTHENTICATION
       # —————————————————————————————————————————————————————————————————————————
-
-      use Authority.Authentication
 
       # Refresh the token from the `token` attribute, so that you
       # don't have to pass the full token
@@ -37,48 +30,30 @@ defmodule Authority.Template.AuthenticateTokenize do
         end
       end
 
-      def before_identify(identifier), do: {:ok, identifier}
+      def before_identify(other), do: super(other)
 
       @impl Authority.Authentication
       def identify(%@token_schema{@token_user_assoc => %@user_schema{} = user}) do
         {:ok, user}
       end
 
-      def identify(identifier) do
-        case @repo.get_by(@user_schema, [{@user_identity_field, identifier}]) do
-          nil -> {:error, :"invalid_#{@user_identity_field}"}
-          user -> {:ok, user}
-        end
-      end
+      def identify(identifier), do: super(identifier)
 
       @impl Authority.Authentication
       def validate(%@token_schema{@token_purpose_field => token_purpose} = token, _user, purpose)
           when token_purpose == :any or token_purpose == purpose do
-        if DateTime.compare(DateTime.utc_now(), token[@token_expiration_field]) == :lt do
+        if DateTime.compare(DateTime.utc_now(), Map.get(token, @token_expiration_field)) == :lt do
           :ok
         else
           {:error, :expired_token}
         end
       end
 
-      def validate(%@token_schema{}, _user, _purpose) do
+      def validate(%@token_schema{} = schema, _user, _purpose) do
         {:error, :invalid_token_for_purpose}
       end
 
-      if @user_password_algorithm == :bcrypt do
-        def validate(
-              password,
-              %@user_schema{@user_password_field => encrypted_password},
-              _purpose
-            ) do
-          case Comeonin.Bcrypt.checkpw(password, encrypted_password) do
-            true -> :ok
-            false -> {:error, :invalid_password}
-          end
-        end
-      end
-
-      defoverridable Authority.Authentication
+      def validate(credential, user, purpose), do: super(credential, user, purpose)
 
       # TOKENIZATION 
       # —————————————————————————————————————————————————————————————————————————
@@ -86,6 +61,8 @@ defmodule Authority.Template.AuthenticateTokenize do
       use Authority.Tokenization
 
       @impl Authority.Tokenization
+      def tokenize(credential, purpose \\ :any)
+
       def tokenize({identifier, password}, purpose) do
         with {:ok, user} <- authenticate({identifier, password}, purpose) do
           do_tokenize(user, purpose)
@@ -94,7 +71,7 @@ defmodule Authority.Template.AuthenticateTokenize do
 
       def tokenize(identifier, :recovery) do
         with {:ok, user} <- identify(identifier) do
-          do_tokenize(user, purpose)
+          do_tokenize(user, :recovery)
         end
       end
 
@@ -104,7 +81,7 @@ defmodule Authority.Template.AuthenticateTokenize do
 
       defp do_tokenize(user, purpose) do
         %@token_schema{@token_user_assoc => user}
-        |> @token_schema.insert_changeset(%{@token_purpose_field => purpose})
+        |> @token_schema.changeset(%{@token_purpose_field => purpose})
         |> @repo.insert()
       end
 

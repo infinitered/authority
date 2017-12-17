@@ -9,7 +9,8 @@ defmodule Authority.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      docs: docs()
+      docs: docs(),
+      aliases: aliases()
     ]
   end
 
@@ -42,7 +43,16 @@ defmodule Authority.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ex_doc, ">= 0.0.0", only: [:dev, :test]}
+      {:ex_doc, ">= 0.0.0", only: [:dev, :test]},
+      {:ecto, ">= 0.0.0", only: [:test]},
+      {:postgrex, ">= 0.0.0", only: [:test]},
+      {:exnumerator, ">= 0.0.0", only: [:test]},
+      {:comeonin, ">= 0.0.0", only: [:test]},
+      {:bcrypt_elixir, ">= 0.0.0", only: [:test]}
     ]
+  end
+
+  defp aliases do
+    [test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"]]
   end
 end

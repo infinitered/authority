@@ -1,14 +1,14 @@
-defmodule Authority.Template.Authenticate do
+defmodule Authority.Template.Authentication do
   @moduledoc false
 
   defmacro __using__(config) do
-    quote do
+    quote location: :keep do
       @config unquote(config)
       @repo @config[:repo]
 
       @user_schema @config[:user_schema]
-      @user_identity_field @config[:user_identity_field]
-      @user_password_field @config[:user_password_field]
+      @user_identity_field @config[:user_identity_field] || :email
+      @user_password_field @config[:user_password_field] || :encrypted_password
       @user_password_algorithm @config[:user_password_algorithm] || :bcrypt
 
       use Authority.Authentication
