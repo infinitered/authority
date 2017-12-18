@@ -34,6 +34,7 @@ defmodule Authority.MixProject do
         Behaviours: [
           Authority.Authentication,
           Authority.Locking,
+          Authority.Registration,
           Authority.Tokenization
         ]
       ]
