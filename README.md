@@ -1,4 +1,5 @@
 # Authority
+[![Build Status](https://travis-ci.org/infinitered/authority.svg?branch=master)](https://travis-ci.org/infinitered/authority)
 
 **TODO: Add description**
 
