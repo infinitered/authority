@@ -1,4 +1,5 @@
 # Authority
+[![Hex.pm](https://img.shields.io/hexpm/v/authority.svg)](https://hex.pm/packages/authority)
 [![Build Status](https://travis-ci.org/infinitered/authority.svg?branch=master)](https://travis-ci.org/infinitered/authority)
 
 Authority is a flexible authentication library for Elixir. It encourages you
