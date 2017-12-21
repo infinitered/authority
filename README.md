@@ -12,8 +12,7 @@ See [the documentation](https://hexdocs.pm/authority) for details.
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `authority` to your list of dependencies in `mix.exs`:
+Add `authority` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
