@@ -9,4 +9,5 @@ otp_release:
 before_script:
   - MIX_ENV=test mix deps.get
 script:
+  - MIX_ENV=test mix compile --warnings-as-errors
   - mix test

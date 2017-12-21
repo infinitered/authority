@@ -3,35 +3,42 @@ defmodule Authority.AuthenticationTest do
     use Authority.Authentication
     alias Authority.Test.User
 
+    @impl Authority.Authentication
     def before_identify(identifier) do
       send(self(), {:before_identify, [identifier]})
       {:ok, identifier}
     end
 
+    @impl Authority.Authentication
     def identify(identifier) do
       send(self(), {:identify, [identifier]})
       {:ok, %User{}}
     end
 
+    @impl Authority.Authentication
     def before_validate(user, purpose) do
       send(self(), {:before_validate, [user, purpose]})
       :ok
     end
 
+    @impl Authority.Authentication
     def validate("invalid", _user, _purpose) do
       {:error, :invalid_password}
     end
 
+    @impl Authority.Authentication
     def validate(credential, user, purpose) do
       send(self(), {:validate, [credential, user, purpose]})
       :ok
     end
 
+    @impl Authority.Authentication
     def after_validate(user, purpose) do
       send(self(), {:after_validate, [user, purpose]})
       :ok
     end
 
+    @impl Authority.Authentication
     def failed(user, error) do
       send(self(), {:failed, [user, error]})
     end
