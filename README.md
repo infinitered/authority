@@ -1,7 +1,14 @@
 # Authority
 [![Build Status](https://travis-ci.org/infinitered/authority.svg?branch=master)](https://travis-ci.org/infinitered/authority)
 
-**TODO: Add description**
+Authority is a flexible authentication library for Elixir. It encourages you
+to use plain Elixir modules and behaviours instead of coupling your
+authentication logic to a framework.
+
+While it provides easy integration with [Ecto](https://github.com/elixir-ecto/ecto),
+nothing about Authority requires Ecto.
+
+See [the documentation](https://hexdocs.pm/authority) for details.
 
 ## Installation
 
@@ -15,8 +22,3 @@ def deps do
   ]
 end
 ```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/authority](https://hexdocs.pm/authority).
-
