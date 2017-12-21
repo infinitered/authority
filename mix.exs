@@ -10,7 +10,8 @@ defmodule Authority.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       docs: docs(),
-      aliases: aliases()
+      aliases: aliases(),
+      package: package()
     ]
   end
 
@@ -39,6 +40,17 @@ defmodule Authority.MixProject do
           Authority.Tokenization
         ]
       ]
+    ]
+  end
+
+  defp package do
+    [
+      maintainers: ["Daniel Berkompas"],
+      licenses: ["MIT"],
+      links: %{
+        "GitHub" => "https://github.com/infinitered/authority"
+      },
+      source_url: "https://github.com/infinitered/authority"
     ]
   end
 
