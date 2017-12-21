@@ -1,7 +1,6 @@
 # Change Log
 
-## [Unreleased](https://github.com/infinitered/authority/tree/HEAD)
-
+## [v0.1.0](https://github.com/infinitered/authority/tree/v0.1.0) (2017-12-21)
 **Merged pull requests:**
 
 - Add Recovery [\#9](https://github.com/infinitered/authority/pull/9) ([danielberkompas](https://github.com/danielberkompas))
