@@ -105,6 +105,11 @@ defmodule Authority.Authentication do
   @type error :: {:error, term}
 
   @doc """
+  Converts a credential into a user. Assumes the purpose `:any`.
+  """
+  @callback authenticate(credential) :: :ok | error
+
+  @doc """
   Converts a credential into a user, provided that the credential is valid for
   the given purpose.
   """

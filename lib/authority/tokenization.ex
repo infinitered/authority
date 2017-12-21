@@ -31,6 +31,11 @@ defmodule Authority.Tokenization do
   @type purpose :: atom
 
   @doc """
+  Creates a token, assuming the `:any` purpose, representing a given resource.
+  """
+  @callback tokenize(resource) :: {:ok, token} | {:error, term}
+
+  @doc """
   Create a token with a given purpose, representing a given resource. For
   example, you might convert credentials (email/password) into a token
   representing a user.
