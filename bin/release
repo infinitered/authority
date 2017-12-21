@@ -1,7 +1,10 @@
 #!/usr/bin/env elixir
 
 IO.puts("What version number do you want to release?")
-version = IO.gets("> ")
+version = 
+  "> "
+  |> IO.gets()
+  |> String.replace("\n", "")
 
 with {_, 0} <- System.cmd("github_changelog_generator", []),
      {_, 0} <- System.cmd("git", ["add", "."]),
