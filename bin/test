@@ -7,4 +7,5 @@
 
 MIX_ENV=test mix deps.get || { echo "Dependencies could not be fetched!"; exit 1; }
 MIX_ENV=test mix compile --force --warnings-as-errors || { echo "Please fix all compiler warnings!"; exit 1; }
+MIX_ENV=test mix docs || { echo "Docs did not compile!"; exit 1; }
 mix test || { echo "Tests failed!"; exit 1; }
