@@ -6,7 +6,7 @@ defmodule Authority.Test.Token do
   import Ecto.Changeset
 
   defmodule Purpose do
-    use Exnumerator, values: [:any, :recovery]
+    use Exnumerator, values: [:any, :recovery, :other]
   end
 
   schema "tokens" do

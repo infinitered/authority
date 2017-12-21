@@ -1,5 +1,5 @@
 defmodule Authority.Template.AuthenticationTest do
-  use Authority.DataCase
+  use Authority.DataCase, async: true
 
   defmodule Accounts do
     use Authority.Template,
@@ -28,6 +28,10 @@ defmodule Authority.Template.AuthenticationTest do
     test "returns user if email/password are valid" do
       assert {:ok, %Authority.Test.User{}} =
                Accounts.authenticate({"valid@email.com", "password"})
+    end
+
+    test "returns user for user" do
+      assert {:ok, %Authority.Test.User{}} = Accounts.authenticate(%Authority.Test.User{})
     end
   end
 end

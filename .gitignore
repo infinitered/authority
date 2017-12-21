@@ -13,6 +13,9 @@
 # Ignore Elixir LS
 /.elixir_ls
 
+# Ignore .vscode
+/.vscode
+
 # Ignore Mac OSX files
 /.DS_Store
 

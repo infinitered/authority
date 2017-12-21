@@ -4,30 +4,19 @@ defmodule Authority.Template do
   be able to use a template instead of implementing `Authority` behaviours
   manually.
 
-  ## Configuration
+  ## Definition
 
-  `Authority.Template` takes two options:
-
-  1. `:behaviours`: A list of behaviours to implement
-  2. `:config`: A list of options for those behaviours
-
-  With this information, it will automatically implement the behaviours for
-  you.
+  `Authority` expects you to define a module in your application to hold all the
+  `Authority`-related functions. This module could be called `Accounts`, for
+  example.
 
       defmodule MyApp.Accounts do
         use Authority.Template,
-          behaviours: [...],
-          config: [...]
+          behaviours: [...], # A list of Authority behaviours
+          config: [...] # A keyword list of configuration options
       end
-    
-  Each behaviour requires configuration settings.
 
-  #### Global Configuration
-
-  - `:repo`: (required) the `Ecto.Repo` to use for database lookups. All
-  `Authority` implementations currently assume you are using `Ecto`.
-
-  Example:
+  ### Global Configuration
 
       defmodule MyApp.Accounts do
         use Authority.Template,
@@ -35,8 +24,19 @@ defmodule Authority.Template do
           config: [repo: MyApp.Repo]
       end
 
-  #### `Authority.Authentication`
+  - `:repo`: (required) The `Ecto.Repo` to use for database lookups.
+
+  ### `Authority.Authentication`
   _Provides basic email/password (or username/password) authentication._
+
+      defmodule MyApp.Accounts do
+        use Authority.Template,
+          behaviours: [Authority.Authentication],
+          config: [
+            repo: MyApp.Repo,
+            user_schema: MyApp.Accounts.Schema
+          ]
+      end
 
   - `:user_schema`: (required) the `Ecto.Schema` that represents a user in
   your app.
@@ -50,20 +50,23 @@ defmodule Authority.Template do
   - `:user_password_algorithm`: (optional) the password hashing algorithm
   (Default: `:bcrypt`)
 
-  Example:
+  ### `Authority.Locking`
+  _Provides automatic account locking after a configurable number of
+  attempts. Must be used with `Authority.Authentication`_.
 
       defmodule MyApp.Accounts do
         use Authority.Template,
-          behaviours: [Authority.Authentication],
+          behaviours: [
+            Authority.Authentication,
+            Authority.Locking
+          ],
           config: [
             repo: MyApp.Repo,
-            user_schema: MyApp.Accounts.Schema
+            user_schema: MyApp.Accounts.User,
+            lock_schema: MyApp.Accounts.Lock,
+            lock_attempt_schema: MyApp.Accounts.LoginAttempt
           ]
       end
-
-  #### `Authority.Locking`
-  _Provides automatic account locking after a configurable number of
-  attempts. Must be used with `Authority.Authentication`_.
 
   - `:lock_schema`: (required) the `Ecto.Schema` which represents a lock
 
@@ -89,25 +92,38 @@ defmodule Authority.Template do
   - `:lock_duration_seconds`: (optional) the duration that a user account
   will be locked. (Default: `6000`, 10 minutes)
 
-  Example:
+  ### `Authority.Registration`
+  _Provides user registration and updating._
+
+      defmodule MyApp.Accounts do
+        use Authority.Template,
+          behaviours: [
+            Authority.Registration
+          ],
+          config: [
+            repo: MyApp.Repo,
+            user_schema: MyApp.Accounts.User
+          ]
+      end
+
+  - `:user_schema`: (required) the `Ecto.Schema` which represents a user.
+
+  ### `Authority.Tokenization`
+  _Provides tokenization for credentials. Must be used with
+  `Authority.Authentication`_.
 
       defmodule MyApp.Accounts do
         use Authority.Template,
           behaviours: [
             Authority.Authentication,
-            Authority.Locking
+            Authority.Tokenization
           ],
           config: [
             repo: MyApp.Repo,
             user_schema: MyApp.Accounts.User,
-            lock_schema: MyApp.Accounts.Lock,
-            lock_attempt_schema: MyApp.Accounts.LoginAttempt
+            token_schema: MyApp.Accounts.Token
           ]
       end
-
-  #### `Authority.Tokenization`
-  _Provides tokenization for credentials. Must be used with
-  `Authority.Authentication`_.
 
   - `:token_schema`: (required) the `Ecto.Schema` which represents a token.
 
@@ -123,42 +139,34 @@ defmodule Authority.Template do
   - `:token_purpose_field`: (optional) the field on `:token_schema` which
   stores the purpose of the token. (Default: `:purpose`)
 
-  Example:
-
-      defmodule MyApp.Accounts do
-        use Authority.Template,
-          behaviours: [
-            Authority.Authentication,
-            Authority.Tokenization
-          ],
-          config: [
-            repo: MyApp.Repo,
-            user_schema: MyApp.Accounts.User,
-            token_schema: MyApp.Accounts.Token
-          ]
-      end
-
-  ## Usage
+  ## Using Your Module
 
   Once you've configured your module, you can call `Authority` behaviour
   functions, depending on the behaviours your chose.
 
       alias MyApp.Accounts
+
+      Accounts.create_user(%{
+        email: "my@email.com",
+        password: "password",
+        password_confirmation: "password"
+      })
+      # => {:ok, %MyApp.Accounts.User{}}
       
-      Accounts.authenticate({email, password})
+      Accounts.authenticate({"my@email.com", "password"})
       # => {:ok, %MyApp.Accounts.User{}}
       
       Accounts.authenticate(%MyApp.Accounts.Token{token: "valid"})
       # => {:ok, %MyApp.Accounts.User{}}
       
-      Accounts.tokenize({email, password})
+      Accounts.tokenize({"my@email.com", "password"})
       # => {:ok, %MyApp.Accounts.Token{}}
       
       # After too many failed attempts to log in:
-      Accounts.authenticate({email, password})
+      Accounts.authenticate({"my@email.com", "invalid"})
       # => {:error, %MyApp.Accounts.Lock{reason: :too_many_attempts}}
       
-      Accounts.tokenize({email, password})
+      Accounts.tokenize({"my@email.com", "invalid"})
       # => {:error, %MyApp.Accounts.Lock{reason: :too_many_attempts}}
     
   ## Overriding
@@ -176,6 +184,8 @@ defmodule Authority.Template do
           # find user
         end
         
+        # Use `super` to fall back to the identify/1 function
+        # provided by the template.
         def identify(other), do: super(other)
       end
     
@@ -184,11 +194,14 @@ defmodule Authority.Template do
   `Authority.Template` assumes you are using `Ecto`. However, nothing about
   the behaviours require you to use `Ecto`. You can simply implement the
   behaviours manually without using `Authority.Template`.
+
+  See each behaviour's documentation for details.
   """
 
   alias Authority.{
     Authentication,
     Locking,
+    Registration,
     Tokenization,
     Template
   }
@@ -196,6 +209,7 @@ defmodule Authority.Template do
   @templates %{
     Authentication => Template.Authentication,
     Locking => Template.Locking,
+    Registration => Template.Registration,
     Tokenization => Template.Tokenization
   }
 

@@ -1,5 +1,5 @@
 defmodule Authority.Template.LockingTest do
-  use Authority.DataCase
+  use Authority.DataCase, async: true
 
   defmodule Accounts do
     use Authority.Template,

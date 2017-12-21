@@ -13,6 +13,14 @@ defmodule Authority.Template.Authentication do
 
       use Authority.Authentication
 
+      def authenticate(%@user_schema{} = user, _purpose) do
+        {:ok, user}
+      end
+
+      def authenticate(credential, purpose) do
+        super(credential, purpose)
+      end
+
       @impl Authority.Authentication
       def identify(identifier) do
         case @repo.get_by(@user_schema, [{@user_identity_field, identifier}]) do

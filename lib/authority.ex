@@ -12,6 +12,7 @@ defmodule Authority do
 
      - `Authority.Authentication`
      - `Authority.Locking`
+     - `Authority.Registration`
      - `Authority.Tokenization`
 
   2. **Templates**: implementations of the behaviours for common use cases.
