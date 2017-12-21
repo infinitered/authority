@@ -107,7 +107,7 @@ defmodule Authority.Template.RegistrationTest do
                  password_confirmation: "third_password"
                })
 
-      assert Repo.aggregate(Token, :count, :id) == 1
+      assert Repo.aggregate(Token, :count, :id) == 0
       {:ok, other} = Auth.tokenize({"test@email.com", "new_password"}, :other)
 
       assert {:error, :invalid_token_for_purpose} =

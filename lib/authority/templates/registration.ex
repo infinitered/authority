@@ -1,6 +1,8 @@
 defmodule Authority.Template.Registration do
   @moduledoc false
 
+  alias Authority.Template
+
   defmacro __using__(config) do
     quote do
       use Authority.Registration
@@ -39,26 +41,18 @@ defmodule Authority.Template.Registration do
             {:ok, user}
         end
       end
+
+      defoverridable Authority.Registration
     end
   end
 
   defmacro __before_compile__(env) do
     behaviours =
       [Authority.Authentication, Authority.Tokenization]
-      |> Enum.filter(&implements?(env.module, &1))
+      |> Enum.filter(&Template.implements?(env.module, &1))
 
     inject_functions(behaviours)
   end
-
-  defp implements?(module, Authority.Authentication) do
-    Module.defines?(module, {:authenticate, 2})
-  end
-
-  defp implements?(module, Authority.Tokenization) do
-    Module.defines?(module, {:tokenize, 2})
-  end
-
-  defp implements?(_module, _behaviour), do: false
 
   # When Registration is used with Authentication and Tokenization, we should accept
   # tokens as the first argument to update_user/2 and delete_user/1.
@@ -79,60 +73,65 @@ defmodule Authority.Template.Registration do
               | {:error, :invalid_token}
               | {:error, :invalid_token_for_purpose}
 
-      @doc """
-      Updates a `#{@user_schema}` with the given parameters. The first argument
-      can be any kind of credential accepted by `authenticate/2`, including
-      `#{@token_schema}`.
-      """
-      @impl Authority.Registration
-      @spec update_user(user_or_credential, map) ::
-              {:ok, @user_schema.t()}
-              | {:error, Ecto.Changeset.t()}
-              | auth_failure
-      def update_user(user_or_credential, params) do
-        with {:ok, user} <- authenticate(user_or_credential, :recovery) do
-          do_update_user(user_or_credential, user, params)
+      unless Module.defines?(__MODULE__, {:update_user, 2}) do
+        @doc """
+        Updates a `#{@user_schema}` with the given parameters. The first argument
+        can be any kind of credential accepted by `authenticate/2`, including
+        `#{@token_schema}`.
+        """
+        @impl Authority.Registration
+        @spec update_user(user_or_credential, map) ::
+                {:ok, @user_schema.t()}
+                | {:error, Ecto.Changeset.t()}
+                | auth_failure
+        def update_user(user_or_credential, params) do
+          with {:ok, user} <- authenticate(user_or_credential, :recovery),
+               {:ok, user_or_credential} <- before_identify(user_or_credential) do
+            do_update_user(user_or_credential, user, params)
+          end
+        end
+
+        defp do_update_user(user_or_credential, user, params) do
+          changeset = @user_schema.changeset(user, params)
+
+          # Remove all other tokens if the password changed, so that the user
+          # will need to log in again.
+          token_query =
+            @config[:token_schema]
+            |> where([t], field(t, ^:"#{@token_user_assoc}_id") == ^changeset.data.id)
+            |> where([t], t.id != ^user_or_credential.id)
+            |> or_where([t], t.purpose == ^:recovery)
+
+          result =
+            Multi.new()
+            |> Multi.update(:user, changeset)
+            |> Multi.delete_all(:tokens, token_query)
+            |> @repo.transaction()
+
+          case result do
+            {:ok, %{user: user}} ->
+              {:ok, user}
+
+            {:error, _operation, reason, _changes} ->
+              {:error, reason}
+          end
         end
       end
 
-      defp do_update_user(user_or_credential, user, params) do
-        changeset = @user_schema.changeset(user, params)
-
-        case do_delete_tokens(user_or_credential, changeset) do
-          {:ok, %{user: user}} ->
-            {:ok, user}
-
-          {:error, _operation, reason, _changes} ->
-            {:error, reason}
-        end
-      end
-
-      defp do_delete_tokens(user_or_credential, changeset) do
-        # Remove all other tokens if the password changed, so that the user
-        # will need to log in again.
-        token_query =
-          @config[:token_schema]
-          |> where([t], field(t, ^:"#{@token_user_assoc}_id") == ^changeset.data.id)
-          |> where([t], t.id != ^user_or_credential.id)
-
-        Multi.new()
-        |> Multi.update(:user, changeset)
-        |> Multi.delete_all(:tokens, token_query)
-        |> @repo.transaction()
-      end
-
-      @doc """
-      Deletes a `#{@user_schema}`. Accepts any credential type supported by
-      `authenticate/2`.
-      """
-      @impl Authority.Registration
-      @spec delete_user(user_or_credential) ::
-              {:ok, @user_schema.t}
-              | {:error, Ecto.Changeset.t()}
-              | auth_failure
-      def delete_user(user_or_credential) do
-        with {:ok, user} <- authenticate(user_or_credential) do
-          @repo.delete(user)
+      unless Module.defines?(__MODULE__, {:delete_user, 1}) do
+        @doc """
+        Deletes a `#{@user_schema}`. Accepts any credential type supported by
+        `authenticate/2`.
+        """
+        @impl Authority.Registration
+        @spec delete_user(user_or_credential) ::
+                {:ok, @user_schema.t}
+                | {:error, Ecto.Changeset.t()}
+                | auth_failure
+        def delete_user(user_or_credential) do
+          with {:ok, user} <- authenticate(user_or_credential) do
+            @repo.delete(user)
+          end
         end
       end
 
@@ -144,26 +143,30 @@ defmodule Authority.Template.Registration do
   # inject very simple functions that assume the first argument is a user.
   defp inject_functions(_) do
     quote do
-      @doc """
-      Updates a `#{@user_schema}` with params.
-      """
-      @impl Authority.Registration
-      @spec update_user(@user_schema.t(), map) ::
-              {:ok, @user_schema.t()} | {:error, Ecto.Changeset.t()}
-      def update_user(user, params) do
-        user
-        |> @user_schema.changeset(params)
-        |> @repo.update()
+      unless Module.defines?(__MODULE__, {:update_user, 2}) do
+        @doc """
+        Updates a `#{@user_schema}` with params.
+        """
+        @impl Authority.Registration
+        @spec update_user(@user_schema.t(), map) ::
+                {:ok, @user_schema.t()} | {:error, Ecto.Changeset.t()}
+        def update_user(user, params) do
+          user
+          |> @user_schema.changeset(params)
+          |> @repo.update()
+        end
       end
 
-      @doc """
-      Deletes a `#{@user_schema}`.
-      """
-      @impl Authority.Registration
-      @spec delete_user(@user_schema.t()) ::
-              {:ok, @user_schema.t()} | {:error, Ecto.Changeset.t()}
-      def delete_user(user) do
-        @repo.delete(user)
+      unless Module.defines?(__MODULE__, {:delete_user, 1}) do
+        @doc """
+        Deletes a `#{@user_schema}`.
+        """
+        @impl Authority.Registration
+        @spec delete_user(@user_schema.t()) ::
+                {:ok, @user_schema.t()} | {:error, Ecto.Changeset.t()}
+        def delete_user(user) do
+          @repo.delete(user)
+        end
       end
 
       defoverridable Authority.Registration
