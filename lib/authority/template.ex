@@ -92,6 +92,34 @@ defmodule Authority.Template do
   - `:lock_duration_seconds`: (optional) the duration that a user account
   will be locked. (Default: `6000`, 10 minutes)
 
+  ### `Authority.Recovery`
+  _Provides account recovery. Requires `Authority.Tokenization`._
+
+      defmodule MyApp.Accounts do
+        use Authority.Template,
+          behaviours: [
+            Authority.Authentication,
+            Authority.Recovery,
+            Authority.Tokenization
+          ],
+          config: [
+            repo: MyApp.Repo,
+            user_schema: MyApp.Accounts.User,
+            token_schema: MyApp.Accounts.Token,
+            recovery_callback: {MyApp.Notifications, :forgot_password}
+          ]
+      end
+
+      defmodule MyApp.Notifications do
+        def forgot_password(email, token) do
+          # Send the forgot password email
+        end
+      end
+
+  - `:recovery_callback`: an atom function name or module/function tuple to
+    be called after generating a recovery token. This function is actually
+    responsible to send the "forgot password" email to the user.
+
   ### `Authority.Registration`
   _Provides user registration and updating._
 
@@ -168,6 +196,9 @@ defmodule Authority.Template do
       
       Accounts.tokenize({"my@email.com", "invalid"})
       # => {:error, %MyApp.Accounts.Lock{reason: :too_many_attempts}}
+
+      # Send a password reset email
+      Accounts.recover("my@email.com")
     
   ## Overriding
 
@@ -201,6 +232,7 @@ defmodule Authority.Template do
   alias Authority.{
     Authentication,
     Locking,
+    Recovery,
     Registration,
     Tokenization,
     Template
@@ -209,6 +241,7 @@ defmodule Authority.Template do
   @templates %{
     Authentication => Template.Authentication,
     Locking => Template.Locking,
+    Recovery => Template.Recovery,
     Registration => Template.Registration,
     Tokenization => Template.Tokenization
   }
@@ -233,9 +266,20 @@ defmodule Authority.Template do
         raise Error, "No template found for behaviour #{inspect(behaviour)}"
       end
 
-      quote do
+      quote location: :keep do
         use unquote(@templates[behaviour]), unquote(config[:config])
       end
     end
   end
+
+  @doc false
+  def implements?(module, Authority.Authentication) do
+    Module.defines?(module, {:authenticate, 2})
+  end
+
+  def implements?(module, Authority.Tokenization) do
+    Module.defines?(module, {:tokenize, 2})
+  end
+
+  def implements?(_module, _behaviour), do: false
 end
