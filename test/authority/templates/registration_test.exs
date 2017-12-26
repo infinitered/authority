@@ -29,6 +29,59 @@ defmodule Authority.Template.RegistrationTest do
   alias Authority.Test.{User, Token}
   alias Ecto.Changeset
 
+  describe ".change_user/0" do
+    test "returns a changeset for a new user" do
+      for module <- [Accounts, Auth] do
+        assert {:ok, %Ecto.Changeset{data: %User{id: nil}}} = module.change_user()
+      end
+    end
+  end
+
+  describe ".change_user/1" do
+    setup :create_user
+
+    test "returns a changeset for an existing user" do
+      for module <- [Accounts, Auth] do
+        assert {:ok, %Ecto.Changeset{data: %User{id: 123}}} = module.change_user(%User{id: 123})
+      end
+    end
+
+    test "returns a changeset for a valid token" do
+      {:ok, token} = Auth.tokenize({"test@email.com", "password"})
+      assert {:ok, %Ecto.Changeset{data: %User{id: id}}} = Auth.change_user(token)
+      assert id != nil
+    end
+
+    test "returns an error for an invalid token" do
+      assert {:error, :invalid_token} = Auth.change_user(%Token{token: "invalid"})
+    end
+  end
+
+  describe ".change_user/2" do
+    setup :create_user
+
+    test "returns a changeset for an existing user with params" do
+      for module <- [Accounts, Auth] do
+        assert {:ok, %Ecto.Changeset{data: %User{id: 123}, changes: %{email: "test@email.com"}}} =
+                 module.change_user(%User{id: 123}, %{email: "test@email.com"})
+      end
+    end
+
+    test "returns a changeset for a valid token with params" do
+      {:ok, token} = Auth.tokenize({"test@email.com", "password"})
+
+      assert {:ok, %Ecto.Changeset{data: %User{id: id}, changes: %{email: "new@email.com"}}} =
+               Auth.change_user(token, %{email: "new@email.com"})
+
+      assert id != nil
+    end
+
+    test "returns an error for an invalid token" do
+      assert {:error, :invalid_token} =
+               Auth.change_user(%Token{token: "invalid"}, %{email: "new@email.com"})
+    end
+  end
+
   describe ".create_user/1" do
     test "returns error if required fields are not passed" do
       assert {:error, %Changeset{}} = Accounts.create_user(%{email: "test@email.com"})

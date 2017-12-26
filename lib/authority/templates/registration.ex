@@ -17,7 +17,7 @@ defmodule Authority.Template.Registration do
       @user_schema @config[:user_schema] || raise(":user_schema is required")
 
       @doc """
-      Create a `#{@user_schema}` from the parameters.
+      Create a `#{inspect(@user_schema)}` from the parameters.
       """
       @impl Authority.Registration
       @spec create_user(map) :: {:ok, @user_schema.t()} | {:error, Ecto.Changeset.t()}
@@ -28,7 +28,7 @@ defmodule Authority.Template.Registration do
       end
 
       @doc """
-      Gets a `#{@user_schema}` by ID.
+      Gets a `#{inspect(@user_schema)}` by ID.
       """
       @impl Authority.Registration
       @spec get_user(integer) :: {:ok, @user_schema.t} | {:error, :not_found}
@@ -75,9 +75,9 @@ defmodule Authority.Template.Registration do
 
       unless Module.defines?(__MODULE__, {:update_user, 2}) do
         @doc """
-        Updates a `#{@user_schema}` with the given parameters. The first argument
+        Updates a `#{inspect(@user_schema)}` with the given parameters. The first argument
         can be any kind of credential accepted by `authenticate/2`, including
-        `#{@token_schema}`.
+        `#{inspect(@token_schema)}`.
         """
         @impl Authority.Registration
         @spec update_user(user_or_credential, map) ::
@@ -120,7 +120,7 @@ defmodule Authority.Template.Registration do
 
       unless Module.defines?(__MODULE__, {:delete_user, 1}) do
         @doc """
-        Deletes a `#{@user_schema}`. Accepts any credential type supported by
+        Deletes a `#{inspect(@user_schema)}`. Accepts any credential type supported by
         `authenticate/2`.
         """
         @impl Authority.Registration
@@ -135,6 +135,33 @@ defmodule Authority.Template.Registration do
         end
       end
 
+      unless Module.defines?(__MODULE__, {:change_user, 0}) do
+        @doc """
+        Returns a changeset for a given `#{inspect(@user_schema)}` or `#{inspect(@token_schema)}`.
+        """
+        @impl Authority.Registration
+        @spec change_user :: {:ok, Ecto.Changeset.t()} | auth_failure
+        @spec change_user(@user_schema.t() | @token_schema.t()) ::
+                {:ok, Ecto.Changeset.t()} | auth_failure
+        @spec change_user(@user_schema.t() | @token_schema.t(), map) ::
+                {:ok, Ecto.Changeset.t()} | auth_failure
+        def change_user(user_or_token \\ nil, params \\ %{})
+
+        def change_user(nil, params) do
+          {:ok, @user_schema.changeset(%@user_schema{}, params)}
+        end
+
+        def change_user(%@user_schema{} = user, params) do
+          {:ok, @user_schema.changeset(user, params)}
+        end
+
+        def change_user(%@token_schema{} = token, params) do
+          with {:ok, user} <- authenticate(token) do
+            change_user(user, params)
+          end
+        end
+      end
+
       defoverridable Authority.Registration
     end
   end
@@ -143,6 +170,24 @@ defmodule Authority.Template.Registration do
   # inject very simple functions that assume the first argument is a user.
   defp inject_functions(_) do
     quote do
+      unless Module.defines?(__MODULE__, {:change_user, 0}) do
+        @doc """
+        Returns a changeset for `#{inspect(@user_schema)}.
+        """
+        @spec change_user :: {:ok, Ecto.Changeset.t()} | {:error, term}
+        @spec change_user(@user_schema.t()) :: {:ok, Ecto.Changeset.t()} | {:error, term}
+        @spec change_user(@user_schema.t(), map) :: {:ok, Ecto.Changeset.t()} | {:error, term}
+        def change_user(user \\ nil, params \\ %{})
+
+        def change_user(nil, params) do
+          {:ok, @user_schema.changeset(%@user_schema{}, params)}
+        end
+
+        def change_user(%@user_schema{} = user, params) do
+          {:ok, @user_schema.changeset(user, params)}
+        end
+      end
+
       unless Module.defines?(__MODULE__, {:update_user, 2}) do
         @doc """
         Updates a `#{@user_schema}` with params.
