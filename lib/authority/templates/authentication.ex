@@ -13,6 +13,7 @@ defmodule Authority.Template.Authentication do
 
       use Authority.Authentication
 
+      @impl Authority.Authentication
       def authenticate(%@user_schema{} = user, _purpose) do
         {:ok, user}
       end
