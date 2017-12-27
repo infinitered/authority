@@ -15,9 +15,19 @@ defmodule Authority.Template.Registration do
 
       @repo @config[:repo] || raise(":repo is required")
       @user_schema @config[:user_schema] || raise(":user_schema is required")
+      @user_identity_field @config[:user_identity_field] || :email
 
       @doc """
       Create a `#{inspect(@user_schema)}` from the parameters.
+
+      ## Example
+
+          #{inspect(__MODULE__)}.create_user(%{
+            #{@user_identity_field}: "valid_#{@user_identity_field}",
+            password: "password",
+            password_confirmation: "password"
+          })
+          # => {:ok, %#{inspect(@user_schema)}{}}
       """
       @impl Authority.Registration
       @spec create_user(map) :: {:ok, @user_schema.t()} | {:error, Ecto.Changeset.t()}
@@ -29,6 +39,14 @@ defmodule Authority.Template.Registration do
 
       @doc """
       Gets a `#{inspect(@user_schema)}` by ID.
+
+      ## Example
+
+          #{inspect(__MODULE__)}.get_user(1)
+          # => {:ok, %#{inspect(@user_schema)}{}}
+
+          #{inspect(__MODULE__)}.get_user(123)
+          # => {:error, :not_found}
       """
       @impl Authority.Registration
       @spec get_user(integer) :: {:ok, @user_schema.t} | {:error, :not_found}
@@ -63,6 +81,7 @@ defmodule Authority.Template.Registration do
 
       @token_schema @config[:token_schema] || raise(":token_schema is required")
       @token_user_assoc @config[:token_user_assoc] || :user
+      @token_field @config[:token] || :token
       @user_password_field @config[:user_password_field] || :encrypted_password
       @user_identity_field @config[:user_identity_field] || :email
 
@@ -78,6 +97,23 @@ defmodule Authority.Template.Registration do
         Updates a `#{inspect(@user_schema)}` with the given parameters. The first argument
         can be any kind of credential accepted by `authenticate/2`, including
         `#{inspect(@token_schema)}`.
+
+        ## Example
+
+            #{inspect(__MODULE__)}.update_user(%#{inspect(@user_schema)}{}, %{
+              #{@user_identity_field}: "new_#{@user_identity_field}"
+            })
+            # => {:ok, %#{inspect(@user_schema)}{}}
+
+            #{inspect(__MODULE__)}.update_user(%#{inspect(@token_schema)}{#{@token_field}: "valid"}, %{
+              #{@user_identity_field}: "new_#{@user_identity_field}"
+            })
+            # => {:ok, %#{inspect(@user_schema)}{}}
+
+            #{inspect(__MODULE__)}.update_user(%#{inspect(@token_schema)}{#{@token_field}: "invalid"}, %{
+              #{@user_identity_field}: "new_#{@user_identity_field}"
+            })
+            # => {:error, :invalid_token}
         """
         @impl Authority.Registration
         @spec update_user(user_or_credential, map) ::
@@ -124,7 +160,7 @@ defmodule Authority.Template.Registration do
         `authenticate/2`.
         """
         @impl Authority.Registration
-        @spec delete_user(user_or_credential) ::
+        @spec delete_user(@user_schema.t() | @token_schema.t()) ::
                 {:ok, @user_schema.t}
                 | {:error, Ecto.Changeset.t()}
                 | auth_failure
@@ -137,7 +173,22 @@ defmodule Authority.Template.Registration do
 
       unless Module.defines?(__MODULE__, {:change_user, 0}) do
         @doc """
-        Returns a changeset for a given `#{inspect(@user_schema)}` or `#{inspect(@token_schema)}`.
+        Returns a changeset for a given `#{inspect(@user_schema)}`. Also accepts a
+        `#{inspect(@token_schema)}` instead of a user.
+
+        ## Examples
+
+            #{inspect(__MODULE__)}.change_user()
+            # => {:ok, %Ecto.Changeset{}}
+
+            #{inspect(__MODULE__)}.change_user(%#{inspect(@user_schema)}{}, %{...})
+            # => {:ok, %Ecto.Changeset{}}
+
+            #{inspect(__MODULE__)}.change_user(%#{inspect(@token_schema)}{#{@token_field}: "valid"}, %{...})
+            # => {:ok, %Ecto.Changeset{}}
+
+            #{inspect(__MODULE__)}.change_user(%#{inspect(@token_schema)}{#{@token_field}: "invalid"}, %{...})
+            # => {:error, :invalid_token}
         """
         @impl Authority.Registration
         @spec change_user :: {:ok, Ecto.Changeset.t()} | auth_failure
@@ -172,7 +223,15 @@ defmodule Authority.Template.Registration do
     quote do
       unless Module.defines?(__MODULE__, {:change_user, 0}) do
         @doc """
-        Returns a changeset for `#{inspect(@user_schema)}.
+        Returns a changeset for a given `#{inspect(@user_schema)}`.
+
+        ## Examples
+
+           #{inspect(__MODULE__)}.change_user()
+           # => {:ok, %Ecto.Changeset{}}
+
+           #{inspect(__MODULE__)}.change_user(%#{inspect(@user_schema)}{}, %{...})
+           # => {:ok, %Ecto.Changeset{}}
         """
         @spec change_user :: {:ok, Ecto.Changeset.t()} | {:error, term}
         @spec change_user(@user_schema.t()) :: {:ok, Ecto.Changeset.t()} | {:error, term}
@@ -191,6 +250,13 @@ defmodule Authority.Template.Registration do
       unless Module.defines?(__MODULE__, {:update_user, 2}) do
         @doc """
         Updates a `#{@user_schema}` with params.
+
+        ## Example
+
+            #{inspect(__MODULE__)}.update_user(%#{inspect(@user_schema)}{}, %{
+              #{@user_identity_field}: "new_#{@user_identity_field}"
+            })
+            # => {:ok, %#{inspect(@user_schema)}{}}
         """
         @impl Authority.Registration
         @spec update_user(@user_schema.t(), map) ::

@@ -26,7 +26,11 @@ defmodule Authority.Template.Locking do
 
       import Ecto.Query, except: [lock: 1, lock: 2]
 
+      @doc """
+      Returns any active `#{inspect(@lock_schema)}` on a `#{inspect(@user_schema)}` account.
+      """
       @impl Authority.Locking
+      @spec get_lock(@user_schema.t()) :: {:ok, @lock_schema.t()} | {:error, :unlocked}
       def get_lock(%{id: id}) do
         lock =
           @lock_schema
@@ -42,7 +46,12 @@ defmodule Authority.Template.Locking do
         end
       end
 
+      @doc """
+      Creates a `#{inspect(@lock_schema)}` on a `#{inspect(@user_schema)}` account.
+      """
       @impl Authority.Locking
+      @spec lock(@user_schema.t, reason :: atom) ::
+              {:ok, @lock_schema.t()} | {:error, Ecto.Changeset.t()}
       def lock(user, reason) do
         expires_at =
           DateTime.utc_now()
@@ -58,7 +67,11 @@ defmodule Authority.Template.Locking do
         |> @repo.insert()
       end
 
+      @doc """
+      Unlocks a `#{inspect(@user_schema)}` account.
+      """
       @impl Authority.Locking
+      @spec unlock(@user_schema.t()) :: :ok
       def unlock(%{id: id}) do
         @lock_schema
         |> where(^[{:"#{@lock_user_assoc}_id", id}])
@@ -72,6 +85,7 @@ defmodule Authority.Template.Locking do
       # AUTHENTICATION
       # —————————————————————————————————————————————————————————————————————————
 
+      @doc false
       @impl Authority.Authentication
       def before_validate(user, _purpose) do
         case get_lock(user) do
@@ -80,11 +94,13 @@ defmodule Authority.Template.Locking do
         end
       end
 
+      @doc false
       @impl Authority.Authentication
       def after_validate(user, _purpose) do
         unlock(user)
       end
 
+      @doc false
       @impl Authority.Authentication
       def failed(user, _error) do
         create_attempt(user)

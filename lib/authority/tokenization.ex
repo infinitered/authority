@@ -31,6 +31,11 @@ defmodule Authority.Tokenization do
   @type purpose :: atom
 
   @doc """
+  Gets a token by an identifier, such as a string version of it.
+  """
+  @callback get_token(token) :: {:ok, token} | {:error, term}
+
+  @doc """
   Creates a token, assuming the `:any` purpose, representing a given resource.
   """
   @callback tokenize(resource) :: {:ok, token} | {:error, term}
@@ -41,6 +46,8 @@ defmodule Authority.Tokenization do
   representing a user.
   """
   @callback tokenize(resource, purpose) :: {:ok, token} | {:error, term}
+
+  @optional_callbacks get_token: 1
 
   @doc false
   defmacro __using__(_) do

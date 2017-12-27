@@ -26,7 +26,17 @@ defmodule Authority.Template.Recovery do
       use Authority.Recovery
 
       @doc """
-      Starts the password recovery process for a user.
+      Starts the password recovery process for a `#{inspect(@user_schema)}` by creating a `:recovery`
+      token and calling 
+      `#{inspect(@recovery_callback_module)}.#{@recovery_callback_function}/2`. with it.
+
+      ## Examples
+
+          #{inspect(__MODULE__)}.recover("valid_#{@user_identity_field}")
+          # => :ok
+
+          #{inspect(__MODULE__)}.recover("invalid_#{@user_identity_field}")
+          # => {:error, :invalid_email}
       """
       @impl Authority.Recovery
       @spec recover(String.t()) :: :ok | {:error, term}
