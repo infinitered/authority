@@ -1,8 +1,7 @@
 # Change Log
 
-## [Unreleased](https://github.com/infinitered/authority/tree/HEAD)
-
-[Full Changelog](https://github.com/infinitered/authority/compare/v0.1.0...HEAD)
+## [v0.2.0](https://github.com/infinitered/authority/tree/v0.2.0) (2018-01-03)
+[Full Changelog](https://github.com/infinitered/authority/compare/v0.1.0...v0.2.0)
 
 **Closed issues:**
 
