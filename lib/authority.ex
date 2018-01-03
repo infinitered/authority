@@ -12,6 +12,7 @@ defmodule Authority do
 
      - `Authority.Authentication`
      - `Authority.Locking`
+     - `Authority.Recovery`
      - `Authority.Registration`
      - `Authority.Tokenization`
 
