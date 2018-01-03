@@ -1,5 +1,17 @@
 # Change Log
 
+## [Unreleased](https://github.com/infinitered/authority/tree/HEAD)
+
+[Full Changelog](https://github.com/infinitered/authority/compare/v0.1.0...HEAD)
+
+**Closed issues:**
+
+- Public API [\#3](https://github.com/infinitered/authority/issues/3)
+
+**Merged pull requests:**
+
+- Add Registration.change\_user callback [\#10](https://github.com/infinitered/authority/pull/10) ([danielberkompas](https://github.com/danielberkompas))
+
 ## [v0.1.0](https://github.com/infinitered/authority/tree/v0.1.0) (2017-12-21)
 **Merged pull requests:**
 
