@@ -169,6 +169,26 @@ defmodule Authority.Template.RegistrationTest do
                  password_confirmation: "fourth_password"
                })
     end
+
+    test "when used with tokenization, only deletes the current users tokens" do
+      Accounts.create_user(%{
+        email: "test2@email.com",
+        password: "password",
+        password_confirmation: "password"
+      })
+
+      {:ok, token1} = Auth.tokenize({"test@email.com", "password"}, :recovery)
+      {:ok, token2} = Auth.tokenize({"test2@email.com", "password"}, :recovery)
+
+      assert {:ok, %User{}} =
+               Auth.update_user(token1, %{
+                 password: "new_password",
+                 password_confirmation: "new_password"
+               })
+
+      refute Repo.get(Token, token1.id)
+      assert Repo.get(Token, token2.id)
+    end
   end
 
   describe ".delete_user/1" do
