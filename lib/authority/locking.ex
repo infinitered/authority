@@ -39,9 +39,9 @@ defmodule Authority.Locking do
           end
         end
 
-        def failed(user) do
-          # Lock the user account after too many 
-          # failed attempts
+        def failed(user, error) do
+          # Lock the user account after too many failed attempts
+          Locking.lock(user, :too_many_attempts)
         end
 
         # ...

@@ -2,7 +2,21 @@ defmodule Authority.Registration do
   @moduledoc """
   A behaviour for registering and updating users.
 
-  ## Usage
+  The core callbacks are:
+
+    - `create_user/1`
+    - `get_user/1`
+    - `update_user/2`
+    - `delete_user/1`
+
+  Applications which have a concept of changesets, (such as `Ecto.Changeset`
+  for example) may find it useful to implement the optional callbacks as well:
+
+    - `change_user/0`
+    - `change_user/1`
+    - `change_user/2`
+
+  ## Example
 
       defmodule MyApp.Accounts.Registration do
         use Authority.Registration
@@ -57,6 +71,12 @@ defmodule Authority.Registration do
   @type params :: map
 
   @typedoc """
+  An identifier for the user, such as an integer ID used as its primary
+  key in the database.
+  """
+  @type id :: any
+
+  @typedoc """
   A user. Can be any type that represents a user for your application.
   """
   @type user :: any
@@ -74,19 +94,19 @@ defmodule Authority.Registration do
   @doc "Creates a user."
   @callback create_user(params) :: {:ok, user} | error
 
-  @doc "Returns a changeset for a new user."
+  @doc "OPTIONAL. Returns a changeset for a new user."
   @callback change_user :: {:ok, changeset} | error
 
-  @doc "Returns a changeset for a given user."
+  @doc "OPTIONAL. Returns a changeset for a given user."
   @callback change_user(user) :: {:ok, changeset} | error
 
-  @doc "Returns a changeset for a given user and params."
+  @doc "OPTIONAL. Returns a changeset for a given user and params."
   @callback change_user(user, params :: map) :: {:ok, changeset} | error
 
   @doc "Gets a user by ID."
-  @callback get_user(integer) :: {:ok, user} | error
+  @callback get_user(id) :: {:ok, user} | error
 
-  @doc "Updates a user."
+  @doc "Updates a user with the given parameters."
   @callback update_user(user, params) :: {:ok, term} | error
 
   @doc "Deletes a user."

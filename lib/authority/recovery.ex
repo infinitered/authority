@@ -2,7 +2,10 @@ defmodule Authority.Recovery do
   @moduledoc """
   A minimal behaviour for recovering a user account.
 
-  ## Usage
+  ## Example
+
+  If your `id` is an email address, your `Recovery` module might look
+  something like this:
 
       defmodule MyApp.Accounts.Recovery do
         use Authority.Recovery
@@ -18,8 +21,8 @@ defmodule Authority.Recovery do
   @type id :: any
 
   @doc """
-  Initiates a password recovery process for the user associated with the
-  identifier.
+  Initiates an account recovery process for the user associated with the
+  identifier, however that looks for your application.
   """
   @callback recover(id) :: :ok | {:error, term}
 
