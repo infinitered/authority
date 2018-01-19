@@ -5,13 +5,12 @@ defmodule Authority.MixProject do
     [
       app: :authority,
       description: "Flexible authentication without frameworks",
-      version: "0.2.0",
+      version: "0.3.0",
       elixir: "~> 1.5",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       docs: docs(),
-      aliases: aliases(),
       package: package()
     ]
   end
@@ -30,16 +29,7 @@ defmodule Authority.MixProject do
     [
       main: Authority,
       groups_for_modules: [
-        "Common Usage": [
-          Authority.Template
-        ],
-        Behaviours: [
-          Authority.Authentication,
-          Authority.Locking,
-          Authority.Recovery,
-          Authority.Registration,
-          Authority.Tokenization
-        ]
+        Behaviours: ~r/Authority\./
       ]
     ]
   end
@@ -58,16 +48,7 @@ defmodule Authority.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ex_doc, ">= 0.0.0", only: [:dev, :test]},
-      {:ecto, ">= 0.0.0", only: [:test]},
-      {:postgrex, ">= 0.0.0", only: [:test]},
-      {:exnumerator, ">= 0.0.0", only: [:test]},
-      {:comeonin, ">= 0.0.0", only: [:test]},
-      {:bcrypt_elixir, ">= 0.0.0", only: [:test]}
+      {:ex_doc, ">= 0.0.0", only: [:dev, :test]}
     ]
-  end
-
-  defp aliases do
-    [test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"]]
   end
 end

@@ -1,15 +1,20 @@
 defmodule Authority.Tokenization do
   @moduledoc """
-  A behaviour for converting resources (or credentials) into tokens.
+  A behaviour for creating tokens to represent resources (or credentials).
 
-  ## Usage
+  Most commonly, this will be used to exchange credentials for a temporary
+  token which will be used to authenticate future requests.
+
+  ## Example
 
       defmodule MyApp.Accounts.Tokenization do
         use Authority.Tokenization
 
         @impl Authority.Tokenization
-        def tokenize(resource, purpose) do
-          # create a token for the resource
+        def tokenize(credential, purpose \\\\ :any) do
+          with {:ok, user} <- MyApp.Accounts.authenticate(credential, purpose) do
+            # create a token associated with the user
+          end
         end
       end
   """
