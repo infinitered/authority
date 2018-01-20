@@ -2,14 +2,16 @@
 [![Hex.pm](https://img.shields.io/hexpm/v/authority.svg)](https://hex.pm/packages/authority)
 [![Build Status](https://travis-ci.org/infinitered/authority.svg?branch=master)](https://travis-ci.org/infinitered/authority)
 
-Authority is a flexible authentication library for Elixir. It encourages you
-to use plain Elixir modules and behaviours instead of coupling your
-authentication logic to a framework.
-
-While it provides easy integration with [Ecto](https://github.com/elixir-ecto/ecto),
-nothing about Authority requires Ecto.
+Authority is an authentication specification for Elixir projects. It
+encourages conforming projects to use plain Elixir modules for
+authentication rather than frameworks.
 
 See [the documentation](https://hexdocs.pm/authority) for details.
+
+## Related Libraries
+
+  * [`authority_ecto`](https://hex.pm/authority_ecto) - Implements
+    Authority behaviours for your app using `Ecto` for persistence.
 
 ## Installation
 
@@ -22,10 +24,6 @@ def deps do
   ]
 end
 ```
-
-## Usage
-
-See [the documentation](https://hexdocs.pm/authority) for usage.
 
 ## Premium Support
 
