@@ -10,8 +10,8 @@ See [the documentation](https://hexdocs.pm/authority) for details.
 
 ## Related Libraries
 
-  * [`authority_ecto`](https://hex.pm/authority_ecto) - Implements
-    Authority behaviours for your app using
+  * [`authority_ecto`](https://github.com/infinitered/authority_ecto) -
+    Implements Authority behaviours for your app using
     [`Ecto`](https://github.com/elixir-ecto/ecto) for persistence.
 
 ## Installation
