@@ -1,5 +1,13 @@
 # Change Log
 
+## [Unreleased](https://github.com/infinitered/authority/tree/HEAD)
+
+[Full Changelog](https://github.com/infinitered/authority/compare/v0.2.0...HEAD)
+
+**Merged pull requests:**
+
+- Remove Template and revamp docs [\#13](https://github.com/infinitered/authority/pull/13) ([danielberkompas](https://github.com/danielberkompas))
+
 ## [v0.2.0](https://github.com/infinitered/authority/tree/v0.2.0) (2018-01-03)
 [Full Changelog](https://github.com/infinitered/authority/compare/v0.1.0...v0.2.0)
 
