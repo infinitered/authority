@@ -22,7 +22,7 @@ defmodule Authority do
 
   ## Conforming Libraries
 
-  * [`authority_ecto`](https://hex.pm/authority_ecto) - Implements
+  * [`authority_ecto`](https://hex.pm/packages/authority_ecto) - Implements
     Authority behaviours for your app using `Ecto` for persistence.
   """
 end
