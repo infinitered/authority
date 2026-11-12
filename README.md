@@ -1,6 +1,5 @@
 # Authority
 [![Hex.pm](https://img.shields.io/hexpm/v/authority.svg)](https://hex.pm/packages/authority)
-[![Build Status](https://travis-ci.org/infinitered/authority.svg?branch=master)](https://travis-ci.org/infinitered/authority)
 
 Authority is an authentication specification for Elixir projects. It
 encourages conforming projects to use plain Elixir modules for
@@ -26,9 +25,6 @@ def deps do
 end
 ```
 
-## Premium Support
+## About
 
-[Infinite Red](https://infinite.red) offers premium support for this library and general web &
-mobile app design/development services. Get in touch [here](https://infinite.red/contact) or email us at [hello@infinite.red](mailto:hello@infinite.red).
-
-![Infinite Red Logo](https://infinite.red/images/infinite_red_logo_colored.png)
+Originally developed by [Infinite Red](https://infinite.red), a U.S.-based web and mobile development company.
